@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 import {useLoaderData} from 'react-router';
 import {
   getSelectedProductOptions,
@@ -106,7 +106,6 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
-  const [customization, setCustomization] = useState(null);
   const configuratorAssets = useMemo(
     () => mapConfiguratorAssets(product),
     [product],
@@ -118,32 +117,28 @@ export default function Product() {
         <HatConfigurator
           assets={configuratorAssets}
           fallbackImage={selectedVariant?.image}
-          onChange={setCustomization}
+          renderDetails={(customization, customizationOptions) => (
+            <ProductDetails
+              title={title}
+              descriptionHtml={descriptionHtml}
+              selectedVariant={selectedVariant}
+              productOptions={productOptions}
+              customization={customization}
+              customizationOptions={customizationOptions}
+            />
+          )}
         />
       ) : (
-        <ProductImage image={selectedVariant?.image} />
+        <>
+          <ProductImage image={selectedVariant?.image} />
+          <ProductDetails
+            title={title}
+            descriptionHtml={descriptionHtml}
+            selectedVariant={selectedVariant}
+            productOptions={productOptions}
+          />
+        </>
       )}
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
-        />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-          customization={customization}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
-      </div>
       <Analytics.ProductView
         data={{
           products: [
@@ -163,13 +158,45 @@ export default function Product() {
   );
 }
 
+function ProductDetails({
+  title,
+  descriptionHtml,
+  selectedVariant,
+  productOptions,
+  customization,
+  customizationOptions,
+}) {
+  return (
+    <div className="product-main">
+      <h1>{title}</h1>
+      <ProductPrice
+        price={selectedVariant?.price}
+        compareAtPrice={selectedVariant?.compareAtPrice}
+      />
+      <br />
+      <ProductForm
+        productOptions={productOptions}
+        selectedVariant={selectedVariant}
+        customization={customization}
+        customizationOptions={customizationOptions}
+      />
+      <br />
+      <br />
+      <p>
+        <strong>Description</strong>
+      </p>
+      <br />
+      <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+      <br />
+    </div>
+  );
+}
+
 function mapConfiguratorAssets(product) {
-  const nodes =
-    product.hatConfigurator?.reference?.assets?.references?.nodes ?? [];
+  const nodes = product.hatConfigurator?.references?.nodes ?? [];
 
   return nodes
     .map((node) => {
-      const placement = safelyParsePlacement(node.placement?.value);
       return {
         id: node.id,
         handle: node.handle,
@@ -178,21 +205,9 @@ function mapConfiguratorAssets(product) {
         code: node.code?.value || '',
         swatch: node.swatch?.value || '',
         image: node.image?.reference?.image ?? null,
-        placement,
       };
     })
     .filter((asset) => asset.kind && asset.image?.url);
-}
-
-function safelyParsePlacement(value) {
-  const fallback = {x: 50, y: 65, width: 50, rotation: 0, zIndex: 2};
-  if (!value) return fallback;
-
-  try {
-    return {...fallback, ...JSON.parse(value)};
-  } catch {
-    return fallback;
-  }
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
@@ -240,54 +255,48 @@ const PRODUCT_FRAGMENT = `#graphql
     handle
     descriptionHtml
     description
-    hatConfigurator: metafield(
-      namespace: "custom"
-      key: "hat_configurator"
-    ) {
-      reference {
-        ... on Metaobject {
-          id
-          handle
-          assets: field(key: "assets") {
-            references(first: 100) {
-              nodes {
-                ... on Metaobject {
-                  id
-                  handle
-                  label: field(key: "label") {
-                    value
-                  }
-                  kind: field(key: "kind") {
-                    value
-                  }
-                  code: field(key: "code") {
-                    value
-                  }
-                  swatch: field(key: "swatch") {
-                    value
-                  }
-                  placement: field(key: "placement") {
-                    value
-                  }
-                  image: field(key: "image") {
-                    reference {
-                      ... on MediaImage {
-                        image {
-                          url
-                          altText
-                          width
-                          height
-                        }
-                      }
-                    }
-                  }
-                }
+hatConfigurator: metafield(
+  namespace: "custom"
+  key: "hat_configurator"
+) {
+  references(first: 100) {
+    nodes {
+      ... on Metaobject {
+        id
+        handle
+
+        label: field(key: "label") {
+          value
+        }
+
+        kind: field(key: "kind") {
+          value
+        }
+
+        code: field(key: "code") {
+          value
+        }
+
+        swatch: field(key: "swatch") {
+          value
+        }
+
+        image: field(key: "image") {
+          reference {
+            ... on MediaImage {
+              image {
+                url
+                altText
+                width
+                height
               }
             }
           }
         }
       }
     }
+  }
+}
     encodedVariantExistence
     encodedVariantAvailability
     options {

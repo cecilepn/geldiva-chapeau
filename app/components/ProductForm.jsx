@@ -8,7 +8,12 @@ import {useAside} from './Aside';
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
  * }}
  */
-export function ProductForm({productOptions, selectedVariant, customization}) {
+export function ProductForm({
+  productOptions,
+  selectedVariant,
+  customization,
+  customizationOptions,
+}) {
   const navigate = useNavigate();
   const {open} = useAside();
   return (
@@ -92,6 +97,7 @@ export function ProductForm({productOptions, selectedVariant, customization}) {
           </div>
         );
       })}
+      {customizationOptions}
       <AddToCartButton
         disabled={
           !selectedVariant ||
@@ -113,28 +119,28 @@ export function ProductForm({productOptions, selectedVariant, customization}) {
                       key: 'Couleur principale',
                       value: customization.base.label,
                     },
-                    {
-                      key: 'Gros grain',
-                      value: customization.ribbon.label,
-                    },
-                    {
-                      key: 'Passant',
-                      value: customization.loop.label,
-                    },
+                    ...(customization.ribbon
+                      ? [
+                          {
+                            key: 'Gros grain',
+                            value: customization.ribbon.label,
+                          },
+                        ]
+                      : []),
+                    ...(customization.loop
+                      ? [
+                          {
+                            key: 'Passant',
+                            value: customization.loop.label,
+                          },
+                        ]
+                      : []),
                     {
                       key: '_Configuration',
                       value: JSON.stringify({
                         base: customization.base.handle,
-                        ribbon: customization.ribbon.handle,
-                        loop: customization.loop.handle,
-                        placements: Object.fromEntries(
-                          [customization.ribbon, customization.loop].map(
-                            (asset) => [
-                              asset.handle,
-                              customization.placements[asset.id],
-                            ],
-                          ),
-                        ),
+                        ribbon: customization.ribbon?.handle ?? null,
+                        loop: customization.loop?.handle ?? null,
                       }),
                     },
                   ],
