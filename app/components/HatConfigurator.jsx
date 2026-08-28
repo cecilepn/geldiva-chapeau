@@ -166,5 +166,6 @@ function AssetOptions({title, assets, selectedId, onSelect, onRemove}) {
   );
 }
 
-/** @typedef {{id: string; handle: string; label: string; kind: string; code: string; swatch: string; image: {url: string; altText?: string | null} | null}} HatAsset */
+/** @typedef {{id: string; handle: string; label: string; kind: string; code: string; swatch: string; variant: ProductVariant | null; image: {url: string; altText?: string | null} | null}} HatAsset */
 /** @typedef {{base: HatAsset | null; ribbon: HatAsset | null; loop: HatAsset | null; isComplete: boolean}} HatConfiguration */
+/** @typedef {import('@shopify/hydrogen/storefront-api-types').ProductVariant} ProductVariant */

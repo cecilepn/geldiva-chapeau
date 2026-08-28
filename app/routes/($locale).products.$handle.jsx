@@ -166,12 +166,32 @@ function ProductDetails({
   customization,
   customizationOptions,
 }) {
+  const extrasAmount = [customization?.ribbon, customization?.loop].reduce(
+    (total, asset) =>
+      total + Number(asset?.variant?.price?.amount ?? 0),
+    0,
+  );
+  const displayedPrice = selectedVariant?.price
+    ? {
+        ...selectedVariant.price,
+        amount: String(Number(selectedVariant.price.amount) + extrasAmount),
+      }
+    : undefined;
+  const displayedCompareAtPrice = selectedVariant?.compareAtPrice
+    ? {
+        ...selectedVariant.compareAtPrice,
+        amount: String(
+          Number(selectedVariant.compareAtPrice.amount) + extrasAmount,
+        ),
+      }
+    : undefined;
+
   return (
     <div className="product-main">
       <h1>{title}</h1>
       <ProductPrice
-        price={selectedVariant?.price}
-        compareAtPrice={selectedVariant?.compareAtPrice}
+        price={displayedPrice}
+        compareAtPrice={displayedCompareAtPrice}
       />
       <br />
       <ProductForm
@@ -204,10 +224,16 @@ function mapConfiguratorAssets(product) {
         kind: node.kind?.value || '',
         code: node.code?.value || '',
         swatch: node.swatch?.value || '',
+        variant: node.variant?.reference ?? null,
         image: node.image?.reference?.image ?? null,
       };
     })
-    .filter((asset) => asset.kind && asset.image?.url);
+    .filter(
+      (asset) =>
+        asset.kind &&
+        asset.image?.url &&
+        (asset.kind === 'base' || asset.variant?.id),
+    );
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
@@ -279,6 +305,37 @@ hatConfigurator: metafield(
 
         swatch: field(key: "swatch") {
           value
+        }
+
+        variant: field(key: "variant") {
+          reference {
+            ... on ProductVariant {
+              id
+              availableForSale
+              title
+              price {
+                amount
+                currencyCode
+              }
+              image {
+                id
+                url
+                altText
+                width
+                height
+              }
+              product {
+                id
+                handle
+                title
+                vendor
+              }
+              selectedOptions {
+                name
+                value
+              }
+            }
+          }
         }
 
         image: field(key: "image") {

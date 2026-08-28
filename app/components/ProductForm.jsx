@@ -16,6 +16,13 @@ export function ProductForm({
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const selectedAddons = [customization?.ribbon, customization?.loop].filter(
+    Boolean,
+  );
+  const addonsAreAvailable = selectedAddons.every(
+    (asset) => asset.variant?.availableForSale,
+  );
+
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -102,13 +109,14 @@ export function ProductForm({
         disabled={
           !selectedVariant ||
           !selectedVariant.availableForSale ||
-          !customization?.isComplete
+          !customization?.isComplete ||
+          !addonsAreAvailable
         }
         onClick={() => {
           open('cart');
         }}
         lines={
-          selectedVariant && customization?.isComplete
+          selectedVariant && customization?.isComplete && addonsAreAvailable
             ? [
                 {
                   merchandiseId: selectedVariant.id,
@@ -141,17 +149,32 @@ export function ProductForm({
                         base: customization.base.handle,
                         ribbon: customization.ribbon?.handle ?? null,
                         loop: customization.loop?.handle ?? null,
+                        ribbonVariantId:
+                          customization.ribbon?.variant?.id ?? null,
+                        loopVariantId: customization.loop?.variant?.id ?? null,
                       }),
                     },
                   ],
                 },
+                ...selectedAddons.map((asset) => ({
+                  merchandiseId: asset.variant.id,
+                  quantity: 1,
+                  selectedVariant: asset.variant,
+                  parent: {merchandiseId: selectedVariant.id},
+                  attributes: [
+                    {key: 'Personnalisation', value: asset.label},
+                    {key: '_ConfigurationParent', value: selectedVariant.id},
+                  ],
+                })),
               ]
             : []
         }
       >
         {!selectedVariant?.availableForSale
           ? 'Indisponible'
-          : customization?.isComplete
+          : !addonsAreAvailable
+            ? 'Une option sélectionnée est indisponible'
+            : customization?.isComplete
             ? 'Ajouter au panier'
             : 'Complétez la personnalisation'}
       </AddToCartButton>
