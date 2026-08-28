@@ -16,7 +16,7 @@ import {useAside} from './Aside';
  * }}
  */
 export function CartLineItem({layout, line, childrenMap}) {
-  const {id, merchandise} = line;
+  const {id, merchandise, attributes = []} = line;
   const {product, title, image, selectedOptions} = merchandise;
   const lineItemUrl = useVariantUrl(product.handle, selectedOptions);
   const {close} = useAside();
@@ -60,6 +60,15 @@ export function CartLineItem({layout, line, childrenMap}) {
                 </small>
               </li>
             ))}
+            {attributes
+              .filter((attribute) => !attribute.key.startsWith('_'))
+              .map((attribute) => (
+                <li key={attribute.key}>
+                  <small>
+                    {attribute.key}: {attribute.value}
+                  </small>
+                </li>
+              ))}
           </ul>
           <CartLineQuantity line={line} />
         </div>

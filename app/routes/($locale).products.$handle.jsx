@@ -1,3 +1,4 @@
+import {useMemo, useState} from 'react';
 import {useLoaderData} from 'react-router';
 import {
   getSelectedProductOptions,
@@ -10,6 +11,7 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {HatConfigurator} from '~/components/HatConfigurator';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 /**
@@ -76,7 +78,7 @@ async function loadCriticalData({context, params, request}) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context, params}) {
+function loadDeferredData() {
   // Put any API calls that is not critical to be available on first page render
   // For example: product reviews, product recommendations, social feeds.
 
@@ -104,10 +106,23 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
+  const [customization, setCustomization] = useState(null);
+  const configuratorAssets = useMemo(
+    () => mapConfiguratorAssets(product),
+    [product],
+  );
 
   return (
     <div className="product">
-      <ProductImage image={selectedVariant?.image} />
+      {configuratorAssets.length ? (
+        <HatConfigurator
+          assets={configuratorAssets}
+          fallbackImage={selectedVariant?.image}
+          onChange={setCustomization}
+        />
+      ) : (
+        <ProductImage image={selectedVariant?.image} />
+      )}
       <div className="product-main">
         <h1>{title}</h1>
         <ProductPrice
@@ -118,6 +133,7 @@ export default function Product() {
         <ProductForm
           productOptions={productOptions}
           selectedVariant={selectedVariant}
+          customization={customization}
         />
         <br />
         <br />
@@ -145,6 +161,38 @@ export default function Product() {
       />
     </div>
   );
+}
+
+function mapConfiguratorAssets(product) {
+  const nodes =
+    product.hatConfigurator?.reference?.assets?.references?.nodes ?? [];
+
+  return nodes
+    .map((node) => {
+      const placement = safelyParsePlacement(node.placement?.value);
+      return {
+        id: node.id,
+        handle: node.handle,
+        label: node.label?.value || node.handle,
+        kind: node.kind?.value || '',
+        code: node.code?.value || '',
+        swatch: node.swatch?.value || '',
+        image: node.image?.reference?.image ?? null,
+        placement,
+      };
+    })
+    .filter((asset) => asset.kind && asset.image?.url);
+}
+
+function safelyParsePlacement(value) {
+  const fallback = {x: 50, y: 65, width: 50, rotation: 0, zIndex: 2};
+  if (!value) return fallback;
+
+  try {
+    return {...fallback, ...JSON.parse(value)};
+  } catch {
+    return fallback;
+  }
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
@@ -192,6 +240,54 @@ const PRODUCT_FRAGMENT = `#graphql
     handle
     descriptionHtml
     description
+    hatConfigurator: metafield(
+      namespace: "custom"
+      key: "hat_configurator"
+    ) {
+      reference {
+        ... on Metaobject {
+          id
+          handle
+          assets: field(key: "assets") {
+            references(first: 100) {
+              nodes {
+                ... on Metaobject {
+                  id
+                  handle
+                  label: field(key: "label") {
+                    value
+                  }
+                  kind: field(key: "kind") {
+                    value
+                  }
+                  code: field(key: "code") {
+                    value
+                  }
+                  swatch: field(key: "swatch") {
+                    value
+                  }
+                  placement: field(key: "placement") {
+                    value
+                  }
+                  image: field(key: "image") {
+                    reference {
+                      ... on MediaImage {
+                        image {
+                          url
+                          altText
+                          width
+                          height
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     encodedVariantExistence
     encodedVariantAvailability
     options {

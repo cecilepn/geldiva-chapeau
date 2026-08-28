@@ -8,13 +8,12 @@ import {useAside} from './Aside';
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
  * }}
  */
-export function ProductForm({productOptions, selectedVariant}) {
+export function ProductForm({productOptions, selectedVariant, customization}) {
   const navigate = useNavigate();
   const {open} = useAside();
   return (
     <div className="product-form">
       {productOptions.map((option) => {
-        // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
 
         return (
@@ -94,23 +93,61 @@ export function ProductForm({productOptions, selectedVariant}) {
         );
       })}
       <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
+        disabled={
+          !selectedVariant ||
+          !selectedVariant.availableForSale ||
+          !customization?.isComplete
+        }
         onClick={() => {
           open('cart');
         }}
         lines={
-          selectedVariant
+          selectedVariant && customization?.isComplete
             ? [
                 {
                   merchandiseId: selectedVariant.id,
                   quantity: 1,
                   selectedVariant,
+                  attributes: [
+                    {
+                      key: 'Couleur principale',
+                      value: customization.base.label,
+                    },
+                    {
+                      key: 'Gros grain',
+                      value: customization.ribbon.label,
+                    },
+                    {
+                      key: 'Passant',
+                      value: customization.loop.label,
+                    },
+                    {
+                      key: '_Configuration',
+                      value: JSON.stringify({
+                        base: customization.base.handle,
+                        ribbon: customization.ribbon.handle,
+                        loop: customization.loop.handle,
+                        placements: Object.fromEntries(
+                          [customization.ribbon, customization.loop].map(
+                            (asset) => [
+                              asset.handle,
+                              customization.placements[asset.id],
+                            ],
+                          ),
+                        ),
+                      }),
+                    },
+                  ],
                 },
               ]
             : []
         }
       >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        {!selectedVariant?.availableForSale
+          ? 'Indisponible'
+          : customization?.isComplete
+            ? 'Ajouter au panier'
+            : 'Complétez la personnalisation'}
       </AddToCartButton>
     </div>
   );

@@ -643,3 +643,97 @@ button.reset:hover:not(:has(> *)) {
   gap: 0.75rem;
   flex-wrap: wrap;
 }
+.hat-configurator {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.hat-configurator__canvas {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f6f4ef;
+  touch-action: none;
+  user-select: none;
+}
+
+.hat-configurator__base {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hat-configurator__layer {
+  position: absolute;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.hat-configurator__layer:active {
+  cursor: grabbing;
+}
+
+.hat-configurator__options,
+.hat-configurator__group,
+.hat-configurator__adjustments {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hat-configurator__group,
+.hat-configurator__adjustments {
+  margin: 0;
+  padding: 1rem 0;
+  border: 0;
+  border-bottom: 1px solid #dedbd4;
+}
+
+.hat-configurator__group legend,
+.hat-configurator__adjustments legend {
+  font-weight: 600;
+}
+
+.hat-configurator__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hat-configurator__choice {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 4.5rem;
+  padding: 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.hat-configurator__choice.is-selected {
+  border-color: #111;
+}
+
+.hat-configurator__swatch {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #b8b5ae;
+  border-radius: 50%;
+}
+
+.hat-configurator__adjustments label {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 48rem) {
+  .hat-configurator {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+  }
+}
